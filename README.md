@@ -3,7 +3,7 @@
 
 ## General purpose 
 
-This script shows the specific details of the local physical and virtual disks mounted to the Windows OS. It lists local disks and allows to see the parameters of the partition and volume objects like ID, partition style, type and others from the disk, partition and volume OS objects, which usually not displayed in the Windows Disk Management. Those details are usefull analizing the event logs/logs of the OS or third party applications, where disks, partitions or volumes mentioned by some not user friendly properties like path or ID.
+This script shows the specific details of the local physical and virtual disks mounted to the Windows OS. It lists local disks and allows to see the parameters of the disk, partition and volume objects like ID, serial number, partition style, type and others from the disk, partition and volume OS objects, which usually not displayed in the Windows Disk Management. Those details are usefull analizing the event logs/logs of the OS or third party applications, where disks, partitions or volumes mentioned by some not user friendly properties like path or ID.
 
 ## Technologies
 

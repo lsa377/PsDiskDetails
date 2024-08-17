@@ -58,10 +58,13 @@ x:Name="Window"
 Title="Local disks - detailed information"
 Height="700"
 Width="800">
-<StackPanel x:Name = "All" Margin="10">
+<StackPanel x:Name = "All" Margin="10" Width = "750">
+<TextBox x:Name="Legend" Height = "20" BorderThickness = "0" FontWeight="Bold" FontSize="12" Margin = "5">DISKS - click for details</TextBox>
+<ScrollViewer x:Name = "DiskListScroll" VerticalScrollBarVisibility="Auto" Height = "85">
 <ListBox x:Name="DiskList" Height = "Auto" DisplayMemberPath = "DisplayName" Margin="5" />
+</ScrollViewer>
 <TextBox x:Name="Status" Height = "Auto" BorderThickness = "0" TextWrapping="Wrap" Margin = "5" />
-<ScrollViewer x:Name = "DiskInfoScroll" VerticalScrollBarVisibility="Auto" Height = "450">
+<ScrollViewer x:Name = "DiskInfoScroll" VerticalScrollBarVisibility="Auto" Height = "495">
 <StackPanel x:Name = "ItemDetails" Height = "Auto" Margin="10" />
 </ScrollViewer>
 </StackPanel>

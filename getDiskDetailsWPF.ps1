@@ -19,29 +19,27 @@ function addTextToPanel ($text, $panel, $bold = $false) {
     }
 }
 
-function createDiskList ($errormessage) {
+function createDiskList () {
     try {
         $Script:localDisks = Get-Disk -ErrorAction Stop
-        foreach ($disk in $Script:localDisks) {
-            $diskString = "" + $disk.Number + " '" + $disk.FriendlyName + "', capacity " + [int]($disk.Size / 1024 / 1024 / 1024) + " GB, partition style '" + $disk.PartitionStyle + "'"
-            if ($disk.PartitionStyle -eq "GPT") {
-                $diskString += ", GUID " + $disk.Guid
+        foreach ($diskGot in $Script:localDisks) {
+            $diskString = "" + $diskGot.Number + " '" + $diskGot.FriendlyName + "', capacity " + [int]($diskGot.Size / 1024 / 1024 / 1024) + " GB, partition style '" + $diskGot.PartitionStyle + "'"
+            if ($diskGot.PartitionStyle -eq "GPT") {
+                $diskString += ", GUID " + $diskGot.Guid
             }        
-            $disk | Add-Member -MemberType NoteProperty -Name "ForList" -Value $diskString -ErrorAction Stop
+            $diskGot | Add-Member -MemberType NoteProperty -Name "ForList" -Value $diskString -ErrorAction Stop
             $addMemberSplat = @{
                 MemberType  = 'ScriptProperty'
                 Name        = 'DisplayName'
                 Value       = { $this.ForList }                  # getter
                 SecondValue = { $this.ForList = $args[0] } # setter
             }
-            $disk | Add-Member @addMemberSplat
+            $diskGot | Add-Member @addMemberSplat
         }
     }
     catch {
         Write-Host ($_.Exception.Message + " " + $_.ScriptStackTrace)
-        $errormessage = $_.Exception.Message
     }
-    return $errormessage
 }
 
 Add-Type -AssemblyName PresentationFramework -ErrorAction Stop
@@ -139,80 +137,77 @@ try {
     $DetailsPannel = $windowdisks.FindName("ItemDetails")
     $RefreshButton = $windowdisks.FindName("Refresh")
 
-    $errormessage = ""
-    $errormessage = createDiskList -errormessage $errormessage
-    if ($errormessage -ne "") {
-        $StatusBox.Text = $errormessage
-    }
+    createDiskList
+
     $DiskList.itemsSource = $Script:localDisks
     
     $DiskList.Add_SelectionChanged({
             $StatusBox.Text = ""
             try {
-                $disk = $DiskList.SelectedItem
-                $DetailsPannel.Children.Clear()
-                addTextToPanel -text "Disk details" -panel $DetailsPannel -bold $true
-                addTextToPanel -text ("Friendly name: '" + $disk.FriendlyName + "'") -panel $DetailsPannel
-                addTextToPanel -text ("Model: '" + $disk.Model + "'") -panel $DetailsPannel
-                addTextToPanel -text ("Manufacturer: '" + $disk.Manufacturer + "'") -panel $DetailsPannel
-                addTextToPanel -text ("Number: " + $disk.Number) -panel $DetailsPannel
-                addTextToPanel -text ("Serial number: " + $disk.SerialNumber) -panel $DetailsPannel
-                addTextToPanel -text ("Partition style: " + $disk.PartitionStyle) -panel $DetailsPannel
-                if ($disk.PartitionStyle -eq "GPT") {
-                    addTextToPanel -text ("GUID: " + $disk.Guid) -panel $DetailsPannel
+                if ($null -eq $DiskList.SelectedItem) {
+                    $DetailsPannel.Children.Clear()
                 }
-                addTextToPanel -text ("Unique Id: " + $disk.UniqueId) -panel $DetailsPannel
-                addTextToPanel -text ("Health status: " + $disk.HealthStatus) -panel $DetailsPannel
-                addTextToPanel -text ("Is boot: " + $disk.IsBoot) -panel $DetailsPannel
-                addTextToPanel -text ("Number of partitions on disk: " + $disk.NumberOfPartitions) -panel $DetailsPannel
-                addTextToPanel -text "" -panel $DetailsPannel
-
-                foreach ($partition in (Get-Partition -DiskNumber $disk.Number -ErrorAction Stop)) {
-                    addTextToPanel -text ("Partition " + $partition.PartitionNumber) -panel $DetailsPannel -bold $true
-                    addTextToPanel -text ("GUID: " + $partition.Guid) -panel $DetailsPannel
-                    addTextToPanel -text ("Is active: " + $partition.IsActive + ", is boot: " + $partition.IsBoot + ", is system " + $partition.IsSystem) -panel $DetailsPannel
-                    addTextToPanel -text ("Size: " + $partition.Size) -panel $DetailsPannel
-                    addTextToPanel -text ("Access paths: " + $partition.AccessPaths) -panel $DetailsPannel
+                else {
+                    $disk = $DiskList.SelectedItem
+                    $DetailsPannel.Children.Clear()
+                    addTextToPanel -text "Disk details" -panel $DetailsPannel -bold $true
+                    addTextToPanel -text ("Friendly name: '" + $disk.FriendlyName + "'") -panel $DetailsPannel
+                    addTextToPanel -text ("Model: '" + $disk.Model + "'") -panel $DetailsPannel
+                    addTextToPanel -text ("Manufacturer: '" + $disk.Manufacturer + "'") -panel $DetailsPannel
+                    addTextToPanel -text ("Number: " + $disk.Number) -panel $DetailsPannel
+                    addTextToPanel -text ("Serial number: " + $disk.SerialNumber) -panel $DetailsPannel
+                    addTextToPanel -text ("Partition style: " + $disk.PartitionStyle) -panel $DetailsPannel
                     if ($disk.PartitionStyle -eq "GPT") {
-                        addTextToPanel -text ("GPT type: " + $gptTypes[$partition.GptType.Replace("{", "").Replace("}", "")] + " " + $partition.GptType) -panel $DetailsPannel
+                        addTextToPanel -text ("GUID: " + $disk.Guid) -panel $DetailsPannel
                     }
-                    if ($disk.PartitionStyle -eq "MBR") {
-                        addTextToPanel -text ("MBR type: " + $mbrTypes[$partition.MbrType] + " (" + $partition.MbrType + ")") -panel $DetailsPannel
-
-                    }
-                    addTextToPanel -text ("Operational status: " + $partition.OperationalStatus) -panel $DetailsPannel
-                    addTextToPanel -text ("Transitional state: " + $transitionStates[$partition.TransitionState]) -panel $DetailsPannel
-                    addTextToPanel -text ("Drive letter: " + $partition.DriveLetter) -panel $DetailsPannel
+                    addTextToPanel -text ("Unique Id: " + $disk.UniqueId) -panel $DetailsPannel
+                    addTextToPanel -text ("Health status: " + $disk.HealthStatus) -panel $DetailsPannel
+                    addTextToPanel -text ("Is boot: " + $disk.IsBoot) -panel $DetailsPannel
+                    addTextToPanel -text ("Number of partitions on disk: " + $disk.NumberOfPartitions) -panel $DetailsPannel
                     addTextToPanel -text "" -panel $DetailsPannel
-                    addTextToPanel -text "Volumes" -panel $DetailsPannel -bold $true
-                    foreach ($volume in (Get-Volume -Partition $partition -ErrorAction Stop)) {
-                        addTextToPanel -text ("Drive letter: " + $volume.DriveLetter) -panel $DetailsPannel
-                        addTextToPanel -text ("File system: " + $volume.FileSystem) -panel $DetailsPannel
-                        addTextToPanel -text ("Label: '" + $volume.FileSystemLabel + "'") -panel $DetailsPannel
-                        addTextToPanel -text ("Size: " + $volume.Size) -panel $DetailsPannel
-                        addTextToPanel -text ("Object ID: " + $volume.ObjectId) -panel $DetailsPannel
-                        addTextToPanel -text ("Path: " + $volume.Path) -panel $DetailsPannel
-                        addTextToPanel -text ("Health status: " + $volume.HealthStatus) -panel $DetailsPannel
-                        addTextToPanel -text ("Operational status: " + $volume.OperationalStatus) -panel $DetailsPannel
+
+                    foreach ($partition in (Get-Partition -DiskNumber $disk.Number -ErrorAction Stop)) {
+                        addTextToPanel -text ("Partition " + $partition.PartitionNumber) -panel $DetailsPannel -bold $true
+                        addTextToPanel -text ("GUID: " + $partition.Guid) -panel $DetailsPannel
+                        addTextToPanel -text ("Is active: " + $partition.IsActive + ", is boot: " + $partition.IsBoot + ", is system " + $partition.IsSystem) -panel $DetailsPannel
+                        addTextToPanel -text ("Size: " + $partition.Size) -panel $DetailsPannel
+                        addTextToPanel -text ("Access paths: " + $partition.AccessPaths) -panel $DetailsPannel
+                        if ($disk.PartitionStyle -eq "GPT") {
+                            addTextToPanel -text ("GPT type: " + $gptTypes[$partition.GptType.Replace("{", "").Replace("}", "")] + " " + $partition.GptType) -panel $DetailsPannel
+                        }
+                        if ($disk.PartitionStyle -eq "MBR") {
+                            addTextToPanel -text ("MBR type: " + $mbrTypes[$partition.MbrType] + " (" + $partition.MbrType + ")") -panel $DetailsPannel
+
+                        }
+                        addTextToPanel -text ("Operational status: " + $partition.OperationalStatus) -panel $DetailsPannel
+                        addTextToPanel -text ("Transitional state: " + $transitionStates[$partition.TransitionState]) -panel $DetailsPannel
+                        addTextToPanel -text ("Drive letter: " + $partition.DriveLetter) -panel $DetailsPannel
+                        addTextToPanel -text "" -panel $DetailsPannel
+                        addTextToPanel -text "Volumes" -panel $DetailsPannel -bold $true
+                        foreach ($volume in (Get-Volume -Partition $partition -ErrorAction Stop)) {
+                            addTextToPanel -text ("Drive letter: " + $volume.DriveLetter) -panel $DetailsPannel
+                            addTextToPanel -text ("File system: " + $volume.FileSystem) -panel $DetailsPannel
+                            addTextToPanel -text ("Label: '" + $volume.FileSystemLabel + "'") -panel $DetailsPannel
+                            addTextToPanel -text ("Size: " + $volume.Size) -panel $DetailsPannel
+                            addTextToPanel -text ("Object ID: " + $volume.ObjectId) -panel $DetailsPannel
+                            addTextToPanel -text ("Path: " + $volume.Path) -panel $DetailsPannel
+                            addTextToPanel -text ("Health status: " + $volume.HealthStatus) -panel $DetailsPannel
+                            addTextToPanel -text ("Operational status: " + $volume.OperationalStatus) -panel $DetailsPannel
+                            addTextToPanel -text "" -panel $DetailsPannel
+                        }
                         addTextToPanel -text "" -panel $DetailsPannel
                     }
-                    addTextToPanel -text "" -panel $DetailsPannel
                 }
             }
             catch {
-                $StatusBox.Text = $_.Exception.Message
+                Write-Host ($_.Exception.Message + " " + $_.ScriptStackTrace)
             }
         })
 
     $RefreshButton.Add_Click({
             $StatusBox.Text = ""
-            $errormessage = ""
-            $errormessage = createDiskList -errormessage $errormessage
-            if ($errormessage -ne "") {
-                $StatusBox.Text = $errormessage
-            }
+            createDiskList
             $DiskList.itemsSource = $Script:localDisks
-            $DetailsPannel.Children.Clear()
         })
 
     $windowdisks.ShowDialog() | Out-Null
